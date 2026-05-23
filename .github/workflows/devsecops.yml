@@ -1,0 +1,27 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet restore app/src/DevSecOps.Api.csproj
+      - run: dotnet build app/src/DevSecOps.Api.csproj --configuration Release --no-restore
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+      - uses: github/codeql-action/analyze@v3
+      - run: docker build -t azure-devsecops-api:${{ github.sha }} app
+
